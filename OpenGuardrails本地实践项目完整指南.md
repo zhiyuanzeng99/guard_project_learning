@@ -219,32 +219,6 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 # 验证安装
 ollama --version
-```
-
-# 国内部署很慢
-/////
-sudo tee /etc/docker/daemon.json <<-'EOF'
-{
-  "registry-mirrors": [
-    "https://docker.mirrors.ustc.edu.cn",
-    "https://hub-mirror.c.163.com"
-  ]
-}
-EOF
-
-sudo systemctl restart docker
-
-# 使用GitHub加速下载Ollama
-sudo curl -L https://ghproxy.com/https://github.com/ollama/ollama/releases/download/v0.1.26/ollama-linux-amd64 -o /usr/local/bin/ollama
-sudo chmod +x /usr/local/bin/ollama
-
-# 手动启动Ollama服务
-ollama serve &
-
-# 验证
-curl http://localhost:11434/api/tags
-
-////////
 
 #### 下载模型
 
