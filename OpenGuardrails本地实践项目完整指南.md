@@ -147,7 +147,7 @@ python3 --version
 sudo apt update && sudo apt upgrade -y
 
 # 安装Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
+curl -fsSL https://get.docker.com -o get-docker.sh ## 国内可能要用阿里的dockers
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 # 注销后重新登录使docker权限生效
