@@ -22,6 +22,8 @@
 
 **针对RTX 5080用户的最优配置**
 
+> 📌 **环境说明**: 本指南使用Conda管理Python环境，确保与你本地已有的conda环境兼容
+
 ### 关键决策点 (全部已优化)
 
 | 决策点 | 选项 | ✅ 推荐 | 原因 |
@@ -59,6 +61,7 @@
 
 ```bash
 # 这是你需要的全部配置
+- 环境: conda create -n openguardrails python=3.10 && conda activate openguardrails
 - 模型: ollama pull llama3.1 + ollama pull nomic-embed-text
 - 配置: 使用文档中【推荐配置 - RTX 5080优化版】
 - 测试: python comparison_test.py --api-key $OG_API_KEY --quick
@@ -69,6 +72,11 @@
 ## 项目概览
 
 ### 架构图
+
+> 💡 **环境隔离说明**:
+> - **Conda环境** (`openguardrails`): 运行测试脚本、Agent代码
+> - **Docker容器**: 运行OpenGuardrails平台服务
+> - 两者完全隔离，互不干扰
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -173,13 +181,12 @@ mkdir -p {agent,tests,data,logs,models}
 
 ### 1.4 安装Python依赖
 
-```bash
-# 创建虚拟环境
-python3 -m venv venv
-source venv/bin/activate
+**✅ 使用Conda环境 (推荐，你本地已有conda)**
 
-# 升级pip
-pip install --upgrade pip
+```bash
+# 创建conda虚拟环境
+conda create -n openguardrails python=3.10 -y
+conda activate openguardrails
 
 # 安装核心依赖
 pip install \
@@ -195,6 +202,16 @@ pip install \
 
 # 保存依赖列表
 pip freeze > requirements.txt
+```
+
+**备选方案: 使用venv** (如果不想用conda)
+
+```bash
+# 创建venv虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+
+# 然后安装上述依赖
 ```
 
 ---
@@ -422,7 +439,7 @@ if __name__ == "__main__":
 ```bash
 # 运行Agent测试
 cd ~/Projects/openguardrails-practice
-source venv/bin/activate
+conda activate openguardrails  # 使用conda环境
 python agent/customer_service_agent.py
 ```
 
@@ -2198,10 +2215,9 @@ cd ~/Projects
 mkdir openguardrails-practice && cd openguardrails-practice
 mkdir -p {agent,tests,data,logs,models}
 
-# 创建Python环境
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
+# ✅ 创建Conda环境 (你本地已有conda)
+conda create -n openguardrails python=3.10 -y
+conda activate openguardrails
 pip install openai==1.12.0 langchain==0.1.10 langchain-community==0.0.24 \
   requests==2.31.0 pandas==2.2.0 matplotlib==3.8.2 numpy==1.26.3 \
   python-dotenv==1.0.1 tqdm==4.66.1
