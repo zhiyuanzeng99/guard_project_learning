@@ -18,6 +18,54 @@
 
 ---
 
+## 🚀 快速开始 (推荐路径)
+
+**针对RTX 5080用户的最优配置**
+
+### 关键决策点 (全部已优化)
+
+| 决策点 | 选项 | ✅ 推荐 | 原因 |
+|--------|------|--------|------|
+| **LLM选择** | Ollama / vLLM / OpenAI | **Ollama llama3.1** | 安装简单，性能足够，5分钟启动 |
+| **检测模型** | Ollama / vLLM官方模型 | **Ollama (先)** | 快速验证，后期可升级 |
+| **Workers数量** | 4-32 | **16 (检测) + 12 (代理)** | 已针对RTX 5080优化 |
+| **测试规模** | 快速/完整 | **快速模式 (15用例)** | 首次验证15分钟，完整可后补 |
+| **升级vLLM** | 现在/稍后 | **完成基础测试后** | 避免复杂���，按需升级 |
+
+### 推荐时间线
+
+```
+总时间: 5-6小时 (vs 原计划7小时)
+
+1. 环境准备 (30分钟)
+   └─ 安装Docker + Python + Ollama
+
+2. 部署Agent (45分钟) ⬇️ 省15分钟
+   └─ 使用Ollama llama3.1标准版
+
+3. 部署OpenGuardrails (1.5小时) ⬇️ 省30分钟
+   └─ Ollama配置 + 跳过vLLM
+
+4. 安全测试 (1.5小时) ⬇️ 省30分钟
+   └─ 快速模式15个用例
+
+5. 数据分析 (1小时)
+   └─ 生成报告和图表
+
+✅ 节省时间: 1-2小时
+```
+
+### 一行命令总结
+
+```bash
+# 这是你需要的全部配置
+- 模型: ollama pull llama3.1 + ollama pull nomic-embed-text
+- 配置: 使用文档中【推荐配置 - RTX 5080优化版】
+- 测试: python comparison_test.py --api-key $OG_API_KEY --quick
+```
+
+---
+
 ## 项目概览
 
 ### 架构图
@@ -46,7 +94,7 @@
 │  │ OpenGuardrails  │          │   Ollama        │           │
 │  │ 检测模型 (vLLM) │          │   llama3.1      │           │
 │  │ Port: 58002     │          │   Port: 11434   │           │
-│  └─────────────────┘          └─────────────────┘           │
+│  └��────────────────┘          └─────────────────┘           │
 │                                                               │
 │              RTX 5080 GPU (24GB VRAM)                        │
 └─────────────────────────────────────────────────────────────┘
@@ -167,12 +215,14 @@ ollama --version
 
 #### 下载模型
 
+**【推荐配置 - RTX 5080优化】**
+
 ```bash
-# 下载llama3.1 (8B模型, ~4.7GB)
+# ✅ 推荐: 使用标准llama3.1 (性能和质量平衡)
 ollama pull llama3.1
 
-# 或者使用更小的模型进行测试
-# ollama pull llama3.1:8b-instruct-q4_0  # 量化版本，约4GB
+# ❌ 不推荐量化版本 (你的显卡足够强大，无需量化)
+# ollama pull llama3.1:8b-instruct-q4_0
 
 # 验证模型
 ollama list
@@ -182,6 +232,11 @@ ollama list
 ollama run llama3.1 "你好"
 # 应该能看到中文回复
 ```
+
+**为什么推荐标准版本:**
+- ✅ RTX 5080有24GB VRAM，完全足够
+- ✅ 标准版本质量更好，测试效果更明显
+- ✅ 避免因模型质量问题影响测试结果
 
 #### 启动Ollama服务
 
@@ -481,7 +536,7 @@ cp .env.example .env
 nano .env
 ```
 
-**重要配置项** (修改`.env`文件):
+**【推荐配置 - RTX 5080优化版】** (修改`.env`文件):
 
 ```bash
 # ============================================
@@ -493,32 +548,32 @@ JWT_SECRET_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -base64 32)
 
 # ============================================
-# AI模型配置
+# AI模型配置 - ✅ 推荐: 使用Ollama (快速简洁)
 # ============================================
-# 选项1: 使用本地Ollama (快速开始)
 GUARDRAILS_MODEL_API_URL=http://host.docker.internal:11434/v1
 GUARDRAILS_MODEL_API_KEY=ollama
 GUARDRAILS_MODEL_NAME=llama3.1
 
-# 选项2: 稍后部署vLLM使用官方模型 (可选)
+# 💡 可选升级: 部署vLLM使用官方模型 (更准确但配置复杂)
+# 如果Ollama效果不满意，再解除下面3行的注释
 # GUARDRAILS_MODEL_API_URL=http://host.docker.internal:58002/v1
 # GUARDRAILS_MODEL_API_KEY=EMPTY
 # GUARDRAILS_MODEL_NAME=OpenGuardrails-Text
 
-# Embedding模型 (使用Ollama的nomic-embed-text)
+# Embedding模型 - ✅ 推荐: 使用Ollama的nomic-embed-text
 EMBEDDING_API_BASE_URL=http://host.docker.internal:11434/v1
 EMBEDDING_API_KEY=ollama
 EMBEDDING_MODEL_NAME=nomic-embed-text
 EMBEDDING_MODEL_DIMENSION=768
 
 # ============================================
-# 部署模式
+# 部署模式 - ✅ 推荐配置
 # ============================================
 DEPLOYMENT_MODE=enterprise
 DEFAULT_LANGUAGE=zh
 
 # ============================================
-# 服务端口
+# 服务端口 - ✅ 保持默认即可
 # ============================================
 FRONTEND_PORT=3000
 ADMIN_PORT=5000
@@ -527,24 +582,32 @@ PROXY_PORT=5002
 POSTGRES_PORT=54321
 
 # ============================================
-# 服务Workers配置
+# 服务Workers配置 - ✅ RTX 5080优化配置
 # ============================================
-# RTX 5090 很强大，可以适当增加workers
-ADMIN_UVICORN_WORKERS=2
-DETECTION_UVICORN_WORKERS=16
-PROXY_UVICORN_WORKERS=12
+# 根据RTX 5080的性能，适度增加workers
+ADMIN_UVICORN_WORKERS=2           # 管理服务，保持默认
+DETECTION_UVICORN_WORKERS=16      # 检测服务，推荐16 (平衡性能和内存)
+PROXY_UVICORN_WORKERS=12          # 代理服务，推荐12
+
+# 💡 如果你的CPU核心数更多，可以增加到24/32
+# 💡 如果内存<32GB，建议保持默认值
 
 # ============================================
-# CORS配置
+# CORS配置 - ✅ 保持默认
 # ============================================
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
 # ============================================
-# 日志级别
+# 日志级别 - ✅ 推荐INFO (便于调试)
 # ============================================
 LOG_LEVEL=INFO
 DEBUG=false
 ```
+
+**配置说明:**
+- ✅ 使用Ollama: 安装简单，5分钟启动，效果已足够
+- ⚠️ Workers配置: 16/12已针对RTX 5080优化，无需调整
+- 💡 如需更高检测准确率，完成基础测试后再升级vLLM
 
 **保存配置**: `Ctrl+O` (保存), `Ctrl+X` (退出)
 
@@ -653,37 +716,49 @@ curl http://localhost:3000/platform/
 
 ### 3.7 (可选) 部署vLLM使用官方模型
 
-如果想使用OpenGuardrails官方的检测模型（性能更好）：
+**【建议】跳过此步骤，先完成基础测试**
+
+**什么时候需要升级到官方模型:**
+- ❌ 首次学习: 不建议，Ollama已足够
+- ✅ Ollama检测不准: 如果基础测试发现Ollama误报/漏报严重
+- ✅ 追求极致性能: 需要生产级检测准确率
+- ✅ 有充足时间: 额外需要1小时配置时间
+
+**如果确实需要升级** (RTX 5080优化配置):
 
 ```bash
-# 安装vLLM (在venv环境外)
+# 安装vLLM
 pip install vllm
 
-# 下载官方模型 (约7GB)
+# 下载官方模型 (约7GB, 需要10-15分钟)
 git lfs install
 git clone https://huggingface.co/openguardrails/OpenGuardrails-Text-2510
 
-# 启动vLLM服务
-vllm serve openguardrails/OpenGuardrails-Text-2510 \
+# ✅ RTX 5080优化启动配置
+vllm serve OpenGuardrails-Text-2510 \
   --host 0.0.0.0 \
   --port 58002 \
   --trust-remote-code \
-  --gpu-memory-utilization 0.5 \
-  --max-model-len 8192 &
+  --gpu-memory-utilization 0.6 \
+  --max-model-len 8192 \
+  --dtype float16 \
+  --tensor-parallel-size 1 &
 
 # 等待模型加载完成 (约1-2分钟)
 
 # 测试
 curl http://localhost:58002/v1/models
 
-# 如果成功，修改.env中的配置:
-# GUARDRAILS_MODEL_API_URL=http://host.docker.internal:58002/v1
-# GUARDRAILS_MODEL_NAME=OpenGuardrails-Text
+# 修改.env配置
+nano ~/Projects/openguardrails-practice/openguardrails/.env
+# 取消注释官方模型配置3行
 
 # 重启OpenGuardrails
 cd ~/Projects/openguardrails-practice/openguardrails
 docker compose restart
 ```
+
+**推荐做法:** 完成阶段4基础测试后，如果需要再回来升级
 
 ---
 
@@ -867,13 +942,27 @@ class ComparisonTester:
             "timestamp": datetime.now().isoformat()
         }
 
-    def run_comparison_test(self):
-        """运行完整对比测试"""
+    def run_comparison_test(self, quick_mode=False):
+        """运行完整对比测试
+
+        Args:
+            quick_mode: 快速模式，只测试核心场景
+        """
         print("="*60)
-        print("开始对比测试")
+        print("开始对比测试" + (" (快速模式)" if quick_mode else " (完整模式)"))
         print("="*60)
 
         all_cases = get_all_test_cases()
+
+        # 快速模式：只取每个类别的前2个用例
+        if quick_mode:
+            quick_cases = []
+            for category in set(c['category'] for c in all_cases):
+                category_cases = [c for c in all_cases if c['category'] == category]
+                quick_cases.extend(category_cases[:2])
+            all_cases = quick_cases
+            print(f"⚡ 快速模式: 将测试 {len(all_cases)} 个核心用例")
+
         total = len(all_cases) * 2  # 每个用例测试两次（有/无保护）
 
         with tqdm(total=total, desc="测试进度") as pbar:
@@ -941,11 +1030,14 @@ def main():
     parser = argparse.ArgumentParser(description='OpenGuardrails对比测试')
     parser.add_argument('--api-key', type=str,
                        help='OpenGuardrails API Key')
+    parser.add_argument('--quick', action='store_true',
+                       help='快速模式：只测试核心场景 (推荐首次使用)')
     args = parser.parse_args()
 
     if not args.api_key:
         print("⚠️  未提供API Key，将只测试无保护模式")
         print("使用方法: python comparison_test.py --api-key sk-xxai-xxxxx")
+        print("快速模式: python comparison_test.py --api-key sk-xxai-xxxxx --quick")
         response = input("\n是否继续？(y/n): ")
         if response.lower() != 'y':
             return
@@ -954,7 +1046,7 @@ def main():
     tester = ComparisonTester(guardrails_api_key=args.api_key)
 
     # 运行测试
-    tester.run_comparison_test()
+    tester.run_comparison_test(quick_mode=args.quick)
 
     # 保存结果
     tester.save_results()
@@ -1144,7 +1236,20 @@ if __name__ == "__main__":
 
 ### 4.4 运行测试
 
+**【推荐】快速测试模式 vs 完整测试**
+
+#### 选择测试规模
+
+| 模式 | 用例数 | 时间 | 推荐场景 |
+|------|--------|------|---------|
+| ✅ **快速验证** | 15个核心用例 | 15分钟 | 首次学习，验证部署 |
+| **完整测试** | 35个全部用例 | 40分钟 | 需要完整数据报告 |
+
+**推荐路径:** 先运行快速验证，确认没问题后再运行完整测试
+
 #### 步骤1: 运行对比测试
+
+**方式A: 快速验证模式 (推荐首次使用)**
 
 ```bash
 cd ~/Projects/openguardrails-practice/tests
@@ -1152,7 +1257,16 @@ cd ~/Projects/openguardrails-practice/tests
 # 替换为你的实际API Key
 export OG_API_KEY="sk-xxai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-# 运行测试
+# 快速测试 (只测试核心场景)
+python comparison_test.py --api-key $OG_API_KEY --quick
+```
+
+**方式B: 完整测试模式 (数据更全面)**
+
+```bash
+cd ~/Projects/openguardrails-practice/tests
+
+# 完整测试 (所有35个用例)
 python comparison_test.py --api-key $OG_API_KEY
 ```
 
@@ -1970,32 +2084,46 @@ pip install --upgrade pandas matplotlib numpy
 
 ### 性能调优
 
-#### 1. 加速Ollama
+**【推荐】RTX 5080用户一般无需调优**
+
+你的配置已经很强大，以下调优仅在遇到性能问题时使用：
+
+#### 1. 如果Ollama响应慢 (>5秒)
 
 ```bash
-# 使用更小的模型
-ollama pull llama3.1:8b-instruct-q4_0
+# ❌ 不推荐降级模型 (RTX 5080完全够用)
+# ollama pull llama3.1:8b-instruct-q4_0
 
-# 或使用专门的聊天模型
-ollama pull llama3.1:8b-instruct-fp16
+# ✅ 推荐: 检查是否其他程序占用GPU
+nvidia-smi
+
+# ✅ 推荐: 重启Ollama服务
+pkill ollama && ollama serve &
 ```
 
-#### 2. 优化OpenGuardrails Workers
+#### 2. 如果内存不足 (<16GB RAM)
 
 ```bash
-# 编辑.env
-# 根据CPU核心数调整
-DETECTION_UVICORN_WORKERS=16  # 建议值: CPU核心数
-PROXY_UVICORN_WORKERS=12
+# 编辑.env，降低workers
+DETECTION_UVICORN_WORKERS=8   # 从16降到8
+PROXY_UVICORN_WORKERS=6       # 从12降到6
+
+# 重启OpenGuardrails
+docker compose restart
 ```
 
-#### 3. 启用缓存
+#### 3. 如果需要加速测试 (可选)
 
 ```bash
 # 编辑.env，启用检测结果缓存
 ENABLE_CACHE=true
 CACHE_TTL=300  # 5分钟
+
+# 重启服务
+docker compose restart
 ```
+
+**一般情况:** 保持推荐配置即可，RTX 5080性能足够
 
 ---
 
@@ -2058,9 +2186,168 @@ openguardrails-practice/
 
 ---
 
-**文档版本**: 1.0
+## 附录A: 完整命令清单 (复制粘贴版)
+
+**基于RTX 5080的推荐配置 - 所有命令汇总**
+
+### 阶段1: 环境准备 (30分钟)
+
+```bash
+# 创建项目目录
+cd ~/Projects
+mkdir openguardrails-practice && cd openguardrails-practice
+mkdir -p {agent,tests,data,logs,models}
+
+# 创建Python环境
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install openai==1.12.0 langchain==0.1.10 langchain-community==0.0.24 \
+  requests==2.31.0 pandas==2.2.0 matplotlib==3.8.2 numpy==1.26.3 \
+  python-dotenv==1.0.1 tqdm==4.66.1
+
+# 安装Docker (如果没有)
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+# 注销后重新登录
+```
+
+### 阶段2: 部署Ollama (45分钟)
+
+```bash
+# 安装Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# ✅ 下载推荐模型 (标准版，不用量化)
+ollama pull llama3.1
+ollama pull nomic-embed-text
+
+# 验证
+ollama list
+ollama run llama3.1 "你好"
+```
+
+### 阶段3: 部署OpenGuardrails (1.5小时)
+
+```bash
+# 克隆仓库
+cd ~/Projects/openguardrails-practice
+git clone https://github.com/openguardrails/openguardrails.git
+cd openguardrails
+
+# 配置环境变量
+cp .env.example .env
+
+# ✅ 使用推荐配置编辑.env
+# 关键配置:
+# - GUARDRAILS_MODEL_API_URL=http://host.docker.internal:11434/v1
+# - GUARDRAILS_MODEL_NAME=llama3.1
+# - DETECTION_UVICORN_WORKERS=16
+# - PROXY_UVICORN_WORKERS=12
+nano .env
+
+# 启动服务
+docker compose up -d
+
+# 等待2-3分钟后验证
+docker compose ps
+curl http://localhost:5000/health
+curl http://localhost:5001/health
+curl http://localhost:5002/health
+
+# 访问平台获取API Key
+# http://localhost:3000/platform/
+# 登录: admin@localhost.com / Admin123456!
+```
+
+### 阶段4: 运行测试 (1.5小时)
+
+```bash
+cd ~/Projects/openguardrails-practice
+
+# 创建所有测试脚本 (从文档复制代码)
+# - agent/customer_service_agent.py
+# - agent/interactive_chat.py
+# - tests/test_dataset.py
+# - tests/comparison_test.py
+# - tests/security_analyzer.py
+# - tests/visualize_results.py
+# - tests/generate_report.py
+
+# ✅ 推荐: 快速测试 (15分钟)
+cd tests
+export OG_API_KEY="sk-xxai-your-key-here"
+python comparison_test.py --api-key $OG_API_KEY --quick
+
+# 或完整测试 (40分钟)
+# python comparison_test.py --api-key $OG_API_KEY
+```
+
+### 阶段5: 生成报告 (1小时)
+
+```bash
+cd ~/Projects/openguardrails-practice/tests
+
+# 安全分析
+python security_analyzer.py ../data/test_results.json
+
+# 生成图表
+pip install matplotlib
+python visualize_results.py ../data/test_results.json
+
+# 生成最终报告
+python generate_report.py ../data/test_results.json
+
+# 查看报告
+cat ../data/TEST_REPORT.md
+```
+
+### 可选: 升级到官方模型 (如果需要)
+
+```bash
+# 仅在Ollama效果不满意时执行
+pip install vllm
+git lfs install
+git clone https://huggingface.co/openguardrails/OpenGuardrails-Text-2510
+
+vllm serve OpenGuardrails-Text-2510 \
+  --host 0.0.0.0 \
+  --port 58002 \
+  --trust-remote-code \
+  --gpu-memory-utilization 0.6 \
+  --max-model-len 8192 \
+  --dtype float16 &
+
+# 修改.env，重启OpenGuardrails
+cd ~/Projects/openguardrails-practice/openguardrails
+nano .env  # 取消注释vLLM配置
+docker compose restart
+```
+
+---
+
+## 附录B: 故障快速排查
+
+| 问题 | 一行命令解决 |
+|------|------------|
+| Ollama连接失败 | `pkill ollama && ollama serve &` |
+| OpenGuardrails启动失败 | `docker compose down -v && docker compose up -d` |
+| 端口被占用 | `sudo lsof -i :5000` 查看占用，然后kill进程 |
+| GPU内存不足 | 不太可能 (RTX 5080 24GB够用) |
+| 测试脚本报错 | `pip install -r requirements.txt` |
+
+---
+
+**文档版本**: 1.1 (已优化推荐路径)
 **最后更新**: 2026-01-29
 **作者**: OpenGuardrails实践指南
+
+**推荐路径核心:**
+- ✅ 使用Ollama llama3.1 (不用vLLM)
+- ✅ Workers: 16 + 12 (已优化)
+- ✅ 快速测试模式 (--quick参数)
+- ✅ 完成基础测试后再考虑升级
 
 **如有问题，请查看**:
 - OpenGuardrails官方文档: https://openguardrails.com
