@@ -184,6 +184,15 @@ sudo systemctl restart docker
 # 验证配置
 docker info | grep -A 5 "Registry Mirrors"
 ```
+# 出现
+docker info | grep -A 5 "Registry Mirrors"
+ Registry Mirrors:
+  https://docker.mirrors.ustc.edu.cn/
+  https://hub-mirror.c.163.com/
+  https://mirror.ccs.tencentyun.com/
+ Live Restore Enabled: false
+ Firewall Backend: iptables
+
 
 **配置后的好处：**
 - ✅ Docker镜像下载速度提升10-50倍
