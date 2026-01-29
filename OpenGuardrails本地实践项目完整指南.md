@@ -190,6 +190,24 @@ docker info | grep -A 5 "Registry Mirrors"
 - ✅ 避免下载超时失败
 - ✅ 后续所有docker pull命令自动使用加速
 
+**备用镜像源（如果上述镜像不可用）：**
+
+```bash
+# 如果中科大/网易/腾讯镜像DNS解析失败，使用以下配置
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://dockerproxy.com",
+    "https://mirror.baidubce.com",
+    "https://docker.nju.edu.cn"
+  ]
+}
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+
 ### 1.3 创建项目目录
 
 ```bash
@@ -786,14 +804,6 @@ curl http://localhost:5002/health
 curl http://localhost:3000/platform/
 # 应该返回HTML (前端页面)
 ```
-
-···
-docker compose up -d
-[+] up 2/2
- ✘ Image postgres:16-alpine                            Error failed to resolve reference "dock...       6.9s
- ! Image openguardrails/openguardrails-platform:latest Interrupted                                      6.9s
-Error response from daemon: failed to resolve reference "docker.io/library/postgres:16-alpine": failed to do request: Head "https://docker.mirrors.ustc.edu.cn/v2/library/postgres/manifests/16-alpine?ns=docker.io": dial tcp: lookup docker.mirrors.ustc.edu.cn on 127.0.0.53:53: no such host
-···
 
 ### 3.6 访问管理平台
 
@@ -1913,7 +1923,7 @@ class ReportGenerator:
 """
 
     def _get_injection_analysis(self):
-        """提示词注入分析"""
+        """提示词注入分��"""
         return """
 | 指标 | 无保护 | 有保护 | 改进 |
 |------|--------|--------|------|
@@ -2166,6 +2176,67 @@ ollama pull llama3.1
 # 4. 设置代理（如果有）
 export https_proxy=http://proxy-ip:port
 export http_proxy=http://proxy-ip:port
+```
+
+#### 问题0.1: Docker镜像DNS解析失败
+
+```bash
+# 症状
+docker compose up -d
+# 错误: failed to resolve reference "docker.io/library/postgres:16-alpine"
+# 错误: dial tcp: lookup docker.mirrors.ustc.edu.cn: no such host
+
+# 原因：镜像源DNS解析失败或镜像源不可用
+
+# 解决方案1: 更换可用的镜像源（推荐）
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://dockerproxy.com",
+    "https://mirror.baidubce.com",
+    "https://docker.nju.edu.cn"
+  ]
+}
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 验证配置
+docker info | grep -A 5 "Registry Mirrors"
+
+# 解决方案2: 修复DNS配置
+# 检查DNS
+cat /etc/resolv.conf
+
+# 如果DNS有问题，修改为公共DNS
+sudo tee /etc/resolv.conf <<-'EOF'
+nameserver 8.8.8.8
+nameserver 114.114.114.114
+nameserver 223.5.5.5
+EOF
+
+# 测试DNS解析
+nslookup dockerproxy.com
+
+# 解决方案3: 手动拉取镜像
+# 如果镜像源仍然有问题，手动拉取
+docker pull dockerproxy.com/library/postgres:16-alpine
+docker tag dockerproxy.com/library/postgres:16-alpine postgres:16-alpine
+
+docker pull dockerproxy.com/openguardrails/openguardrails-platform:latest
+docker tag dockerproxy.com/openguardrails/openguardrails-platform:latest \\
+  openguardrails/openguardrails-platform:latest
+
+# 然后重新启动
+cd ~/Projects/openguardrails-practice/openguardrails
+docker compose up -d
+
+# 解决方案4: 直接从Docker Hub下载（如果网络允许）
+# 移除镜像配置
+sudo rm /etc/docker/daemon.json
+sudo systemctl restart docker
+docker compose up -d
 ```
 
 #### 问题1: Ollama连接失败
