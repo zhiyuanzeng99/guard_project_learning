@@ -787,6 +787,14 @@ curl http://localhost:3000/platform/
 # 应该返回HTML (前端页面)
 ```
 
+···
+docker compose up -d
+[+] up 2/2
+ ✘ Image postgres:16-alpine                            Error failed to resolve reference "dock...       6.9s
+ ! Image openguardrails/openguardrails-platform:latest Interrupted                                      6.9s
+Error response from daemon: failed to resolve reference "docker.io/library/postgres:16-alpine": failed to do request: Head "https://docker.mirrors.ustc.edu.cn/v2/library/postgres/manifests/16-alpine?ns=docker.io": dial tcp: lookup docker.mirrors.ustc.edu.cn on 127.0.0.53:53: no such host
+···
+
 ### 3.6 访问管理平台
 
 1. **打开浏览器**: http://localhost:3000/platform/
