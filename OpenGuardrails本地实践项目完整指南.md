@@ -147,7 +147,7 @@ python3 --version
 sudo apt update && sudo apt upgrade -y
 
 # 安装Docker
-curl -fsSL https://get.docker.com -o get-docker.sh ## 国内可能要用阿里的dockers
+curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 # 注销后重新登录使docker权限生效
@@ -159,6 +159,36 @@ sudo apt install docker-compose-plugin -y
 docker --version
 docker compose version
 ```
+
+#### 🇨🇳 国内网络优化（重要！）
+
+**如果在国内网络环境，强烈建议配置镜像加速：**
+
+```bash
+# 配置Docker国内镜像源
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://hub-mirror.c.163.com",
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+EOF
+
+# 重启Docker使配置生效
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 验证配置
+docker info | grep -A 5 "Registry Mirrors"
+```
+
+**配置后的好处：**
+- ✅ Docker镜像下载速度提升10-50倍
+- ✅ 避免下载超时失败
+- ✅ 后续所有docker pull命令自动使用加速
 
 ### 1.3 创建项目目录
 
@@ -188,8 +218,11 @@ mkdir -p {agent,tests,data,logs,models}
 conda create -n openguardrails python=3.10 -y
 conda activate openguardrails
 
-# 安装核心依赖
+# 安装核心依赖（不指定版本，避免冲突）
 pip install openai requests pandas matplotlib numpy python-dotenv tqdm
+
+# 如果需要langchain（可选）
+# pip install langchain langchain-community
 
 # 保存依赖列表
 pip freeze > requirements.txt
@@ -213,12 +246,64 @@ source venv/bin/activate
 
 #### 安装Ollama
 
+**方法A: 官方安装脚本（国外网络）**
+
 ```bash
 # 下载并安装Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
 # 验证安装
 ollama --version
+```
+
+**方法B: 手动安装（✅ 国内网络推荐）**
+
+如果官方脚本下载卡顿，使用此方法：
+
+```bash
+# 使用GitHub加速镜像下载Ollama
+sudo curl -L https://ghproxy.com/https://github.com/ollama/ollama/releases/download/v0.1.26/ollama-linux-amd64 -o /usr/local/bin/ollama
+sudo chmod +x /usr/local/bin/ollama
+
+# 创建ollama用户
+sudo useradd -r -s /bin/false -m -d /usr/share/ollama ollama
+
+# 创建systemd服务
+sudo tee /etc/systemd/system/ollama.service <<-'EOF'
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+Environment="OLLAMA_HOST=0.0.0.0"
+
+[Install]
+WantedBy=default.target
+EOF
+
+# 启动服务
+sudo systemctl daemon-reload
+sudo systemctl enable ollama
+sudo systemctl start ollama
+
+# 验证安装
+ollama --version
+systemctl status ollama
+```
+
+**验证Ollama运行：**
+
+```bash
+# 检查服务状态
+curl http://localhost:11434/api/tags
+
+# 应该返回: {"models":[]}
+```
 
 #### 下载模型
 
@@ -244,6 +329,31 @@ ollama run llama3.1 "你好"
 - ✅ RTX 5080有24GB VRAM，完全足够
 - ✅ 标准版本质量更好，测试效果更明显
 - ✅ 避免因模型质量问题影响测试结果
+
+**🇨🇳 国内网络下载优化：**
+
+如果`ollama pull`下载慢或卡住：
+
+```bash
+# 方法1: 设置代理（如果有）
+export https_proxy=http://your-proxy:port
+export http_proxy=http://your-proxy:port
+ollama pull llama3.1
+
+# 方法2: 使用Hugging Face镜像
+# 从ModelScope下载模型文件，然后导入Ollama
+# (需要手动配置，适合网络实在不行的情况)
+
+# 方法3: 分段下载，耐心等待
+# Ollama会自动断点续传，可以Ctrl+C后重试
+ollama pull llama3.1
+# 如果中断，再次运行会继续下载
+```
+
+**预计下载时间：**
+- 国外网络: 2-5分钟
+- 国内直连: 10-30分钟（可能需要多次重试）
+- 国内代理: 5-10分钟
 
 #### 启动Ollama服务
 
@@ -1939,7 +2049,7 @@ OpenGuardrails引入的额外延迟主要包括：
         """主要发现"""
         return """
 1. ✅ **显著提升安全性**: 数据泄露率降低67%，提示词注入成功率降至0%
-2. ✅ **性能影响可控**: 额外延迟<100ms，对用户体验影响小
+2. ✅ **性能影响可控**: 额外延迟<100ms，对用户体验影响���
 3. ✅ **检测准确性高**: 准确识别多种敏感数据类型
 4. ✅ **透明易用**: Agent代码无需修改，仅需修改API地址
 5. ⚠️ **仍有改进空间**: 少量边界情况需要优化
@@ -2014,6 +2124,41 @@ python generate_report.py ../data/test_results.json
 ## 故障排查
 
 ### 常见问题
+
+#### 问题0: 网络下载超时（国内用户常见）
+
+```bash
+# 症状
+curl -fsSL https://ollama.com/install.sh | sh  # 卡住不动
+ollama pull llama3.1  # 下载极慢或超时
+docker pull xxx  # 下载失败
+
+# 解决方案
+
+# 1. 配置Docker镜像加速（最重要！）
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://hub-mirror.c.163.com"
+  ]
+}
+EOF
+sudo systemctl restart docker
+
+# 2. 使用Ollama手动安装
+sudo curl -L https://ghproxy.com/https://github.com/ollama/ollama/releases/download/v0.1.26/ollama-linux-amd64 -o /usr/local/bin/ollama
+sudo chmod +x /usr/local/bin/ollama
+
+# 3. 模型下载使用断点续传
+# Ollama支持断点续传，下载中断后可以继续
+ollama pull llama3.1
+# Ctrl+C中断后，再次运行会继续下载
+
+# 4. 设置代理（如果有）
+export https_proxy=http://proxy-ip:port
+export http_proxy=http://proxy-ip:port
+```
 
 #### 问题1: Ollama连接失败
 
@@ -2208,9 +2353,7 @@ mkdir -p {agent,tests,data,logs,models}
 # ✅ 创建Conda环境 (你本地已有conda)
 conda create -n openguardrails python=3.10 -y
 conda activate openguardrails
-pip install openai==1.12.0 langchain==0.1.10 langchain-community==0.0.24 \
-  requests==2.31.0 pandas==2.2.0 matplotlib==3.8.2 numpy==1.26.3 \
-  python-dotenv==1.0.1 tqdm==4.66.1
+pip install openai requests pandas matplotlib numpy python-dotenv tqdm
 
 # 安装Docker (如果没有)
 curl -fsSL https://get.docker.com -o get-docker.sh
