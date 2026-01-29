@@ -189,16 +189,7 @@ conda create -n openguardrails python=3.10 -y
 conda activate openguardrails
 
 # 安装核心依赖
-pip install \
-  openai==1.12.0 \
-  langchain==0.1.10 \
-  langchain-community==0.0.24 \
-  requests==2.31.0 \
-  pandas==2.2.0 \
-  matplotlib==3.8.2 \
-  numpy==1.26.3 \
-  python-dotenv==1.0.1 \
-  tqdm==4.66.1
+pip install openai requests pandas matplotlib numpy python-dotenv tqdm
 
 # 保存依赖列表
 pip freeze > requirements.txt
